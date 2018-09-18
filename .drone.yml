@@ -1,0 +1,32 @@
+pipeline:
+  production_php_build:
+    group: build_production
+    when:
+      branch: master
+      status: success
+    image: composer
+    commands:
+      - composer install --prefer-dist --no-dev --optimize-autoloader
+
+  production_node_build:
+    group: build_production
+    when:
+      branch: master
+      status: success
+    image: node:8
+    commands:
+      - yarn
+      - yarn production
+      - rm -rf node_modules
+
+  create_build:
+    image: debian:jessie
+    commands:
+      - tar -cfz --exclude=app.tar.gz app.tar.gz .
+
+  github_release:
+    image: plugins/github-release
+    secrets: [ github_token ]
+    files: app.tar.gz
+    when:
+      event: tag
